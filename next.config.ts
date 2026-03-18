@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  env: {
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+    TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
+    BLAND_API_KEY: process.env.BLAND_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  },
 };
 
 export default nextConfig;
