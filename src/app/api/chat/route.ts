@@ -52,20 +52,26 @@ INSTRUCTIONS:
 
 Current date: March 17, 2026.`;
 
-    const groq = createGroq({
-        apiKey: process.env.GROQ_API_KEY || '',
-    });
+    if (!process.env.GROQ_API_KEY) {
+        console.error('[chat/route] GROQ_API_KEY is missing from environment.');
+        return new Response(JSON.stringify({ error: 'AI processing is currently unavailable (API key missing).' }), { status: 500 });
+    }
 
-    const coreMessages = (messages || []).map((m: any) => ({
-        role: m.role,
-        content: m.content,
-    }));
+    try {
+        const groq = createGroq({
+            apiKey: process.env.GROQ_API_KEY,
+        });
 
-    const result = await streamText({
-        model: groq('llama-3.3-70b-versatile'),
-        system: systemPrompt + "\n\nWhen a patient confirms a slot, you MUST include this tag at the very end of your response: [CONFIRM: Doctor Name | Time]. This triggers the background confirmation process.",
-        messages: coreMessages,
-        onFinish: async ({ text }) => {
+        const coreMessages = (messages || []).map((m: any) => ({
+            role: m.role,
+            content: m.content,
+        }));
+
+        const result = await streamText({
+            model: groq('llama-3.3-70b-versatile'),
+            system: systemPrompt + "\n\nWhen a patient confirms a slot, you MUST include this tag at the very end of your response: [CONFIRM: Doctor Name | Time]. This triggers the background confirmation process.",
+            messages: coreMessages,
+            onFinish: async ({ text }) => {
             const confirmMatch = text.match(/\[CONFIRM:\s*(.*?)\s*\|\s*(.*?)\s*\]/);
             if (confirmMatch) {
                 const [_, doctor, time] = confirmMatch;
@@ -132,4 +138,11 @@ Current date: March 17, 2026.`;
     });
 
     return result.toTextStreamResponse();
+    } catch (error: any) {
+        console.error('[chat/route] AI stream error:', error);
+        return new Response(JSON.stringify({ 
+            error: 'Failed to generate AI response.', 
+            details: error.message 
+        }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
 }
