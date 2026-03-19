@@ -1,6 +1,7 @@
 import { createGroq } from '@ai-sdk/groq';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
+import { saveConversation } from '@/lib/db';
 
 export const maxDuration = 30;
 
@@ -168,6 +169,18 @@ Current date: March 17, 2026.`;
                     }
                 } else {
                     console.log('[Confirmation] SMS skipped: User did not opt-in or carrier missing.');
+                }
+
+                // --- 3. SAVE CONVERSATION (Memory Continuity) ---
+                if (patientData) {
+                    await saveConversation({
+                        phone: patientData.phone || '',
+                        first_name: patientData.firstName || '',
+                        last_name: patientData.lastName || '',
+                        email: patientData.email || '',
+                        last_conversation: `Booked ${doctor} on ${time}`
+                    }, text);
+                    console.log('[Memory] Conversation saved to Supabase.');
                 }
             }
         },
