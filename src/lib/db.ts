@@ -49,9 +49,69 @@ export async function saveConversation(patientData: PatientRecord, transcript: s
         .select()
         .single();
 
-    if (pError) {
+        if (pError) {
         console.error('Error saving patient/conversation:', pError);
         return null;
     }
     return patient;
+}
+
+/**
+ * Checks if a slot is already taken for a specific doctor or patient.
+ */
+export async function checkBookingConflict(phone: string, doctor: string, time: string) {
+    if (!supabase) return { error: 'Database not initialized' };
+    
+    try {
+        const cleanPhone = phone.replace(/\D/g, '');
+        
+        // Check if doctor is busy
+        const { data: doctorBusy } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('doctor_name', doctor)
+            .eq('booking_time', time)
+            .maybeSingle();
+
+        if (doctorBusy) return { error: `Dr. ${doctor} is already booked at that time.` };
+
+        // Check if patient is busy
+        const { data: patientBusy } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('patient_phone', cleanPhone)
+            .eq('booking_time', time)
+            .maybeSingle();
+
+        if (patientBusy) return { error: 'You already have another appointment at this time.' };
+
+        return { success: true };
+    } catch (err) {
+        console.error('[Guardrails] Conflict check failed:', err);
+        return { error: 'Failed to verify availability' };
+    }
+}
+
+/**
+ * Persists a new booking to the database.
+ */
+export async function createBooking(phone: string, doctor: string, time: string) {
+    if (!supabase) return null;
+    try {
+        const cleanPhone = phone.replace(/\D/g, '');
+        const { data, error } = await supabase
+            .from('bookings')
+            .insert({
+                patient_phone: cleanPhone,
+                doctor_name: doctor,
+                booking_time: time
+            });
+        
+        if (error) throw error;
+        console.log('[Guardrails] Booking record created.');
+        return data;
+    } catch (err) {
+        console.error('[Guardrails] Failed to create booking:', err);
+        return null;
+    }
 }
