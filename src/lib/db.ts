@@ -11,6 +11,10 @@ export interface PatientRecord {
 }
 
 export async function getPatientByPhone(phone: string) {
+    if (!supabase) {
+        console.warn('[DB] Supabase client not initialized (missing env vars).');
+        return null;
+    }
     const cleanPhone = phone.replace(/\D/g, '');
     const { data, error } = await supabase
         .from('patients')
@@ -25,6 +29,10 @@ export async function getPatientByPhone(phone: string) {
 }
 
 export async function saveConversation(patientData: PatientRecord, transcript: string) {
+    if (!supabase) {
+        console.warn('[DB] Supabase client not initialized (missing env vars).');
+        return null;
+    }
     const cleanPhone = patientData.phone.replace(/\D/g, '');
     
     // 1. Upsert patient
