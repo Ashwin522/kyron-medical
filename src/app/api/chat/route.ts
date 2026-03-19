@@ -1,7 +1,6 @@
 import { createGroq } from '@ai-sdk/groq';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
-import { Resend } from 'resend';
 import twilio from 'twilio';
 
 export const maxDuration = 30;
@@ -79,13 +78,23 @@ Current date: March 17, 2026.`;
                 
                 console.log(`[Confirmation] TRIGGERED via Tag. Doctor: ${doctor}, Time: ${time}`);
                 
-                // --- 1. LIVE EMAIL (Resend) ---
-                const resendKey = process.env.RESEND_API_KEY;
-                if (resendKey && resendKey !== 're_your_api_key_here') {
+                // --- 1. LIVE EMAIL (Nodemailer + Gmail) ---
+                const gmailUser = process.env.GMAIL_USER;
+                const gmailPass = process.env.GMAIL_APP_PASSWORD;
+
+                if (gmailUser && gmailPass && gmailUser !== 'your-email@gmail.com') {
                     try {
-                        const resend = new Resend(resendKey);
-                        await resend.emails.send({
-                            from: 'Kyron Medical <appointments@resend.dev>',
+                        const nodemailer = require('nodemailer');
+                        const transporter = nodemailer.createTransport({
+                            service: 'gmail',
+                            auth: {
+                                user: gmailUser,
+                                pass: gmailPass,
+                            },
+                        });
+
+                        await transporter.sendMail({
+                            from: `"Kyron Medical" <${gmailUser}>`,
                             to: email || '',
                             subject: 'Appointment Confirmed - Kyron Medical',
                             html: `
@@ -98,12 +107,12 @@ Current date: March 17, 2026.`;
                                 </div>
                             `
                         });
-                        console.log('[Confirmation] Email sent via Resend.');
+                        console.log('[Confirmation] Email sent via Gmail/Nodemailer.');
                     } catch (err) {
-                        console.error('[Confirmation] Resend error:', err);
+                        console.error('[Confirmation] Nodemailer error:', err);
                     }
                 } else {
-                    console.log('[Confirmation] Email skipped: RESEND_API_KEY not configured.');
+                    console.log('[Confirmation] Email skipped: Gmail credentials not configured or using placeholders.');
                 }
 
                 // --- 2. LIVE SMS (Twilio) ---
