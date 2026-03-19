@@ -123,29 +123,48 @@ Current date: March 17, 2026.`;
                     });
                 }
 
-                // --- 2. LIVE SMS (Twilio) ---
-                if (smsOptIn) {
-                    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-                    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-                    const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
+                // --- 2. LIVE SMS (Email-to-SMS Gateway) ---
+                const { carrier } = patientData || {};
+                if (smsOptIn && carrier) {
+                    const gateways: Record<string, string> = {
+                        verizon: 'vtext.com',
+                        att: 'txt.att.net',
+                        tmobile: 'tmomail.net',
+                        sprint: 'messaging.sprintpcs.com',
+                        mint: 'tmomail.net',
+                        boost: 'myboostmobile.com',
+                        cricket: 'mms.cricketwireless.net',
+                        uscellular: 'email.uscc.net'
+                    };
 
-                    if (twilioSid && twilioSid.startsWith('AC') && twilioToken && twilioFrom) {
+                    const gatewayDomain = gateways[carrier.toLowerCase()];
+                    if (gatewayDomain && gmailUser && gmailPass && gmailUser !== 'your-email@gmail.com') {
                         try {
-                            const client = twilio(twilioSid, twilioToken);
-                            await client.messages.create({
-                                body: `Kyron Medical: Your appointment with ${doctor} is confirmed for ${time}.`,
-                                from: twilioFrom,
-                                to: phone || ''
+                            // Clean phone number: remove non-digits
+                            const cleanPhone = (phone || '').replace(/\D/g, '');
+                            const recipientEmail = `${cleanPhone}@${gatewayDomain}`;
+                            
+                            const nodemailer = require('nodemailer');
+                            const transporter = nodemailer.createTransport({
+                                service: 'gmail',
+                                auth: { user: gmailUser, pass: gmailPass }
                             });
-                            console.log('[Confirmation] SMS sent via Twilio.');
+
+                            await transporter.sendMail({
+                                from: `"Kyron Medical" <${gmailUser}>`,
+                                to: recipientEmail,
+                                subject: '', // SMS gateways often display the subject as part of the text
+                                text: `Kyron Medical: Your appointment with ${doctor} is confirmed for ${time}.`
+                            });
+                            console.log(`[Confirmation] SMS sent via Gateway (${carrier}).`);
                         } catch (err) {
-                            console.error('[Confirmation] Twilio error:', err);
+                            console.error('[Confirmation] Gateway SMS error:', err);
                         }
                     } else {
-                        console.log('[Confirmation] SMS skipped: Twilio credentials not configured.');
+                        console.log('[Confirmation] SMS skipped: Gateway domain not found or Gmail not configured.');
                     }
                 } else {
-                    console.log('[Confirmation] SMS skipped: User did not opt-in.');
+                    console.log('[Confirmation] SMS skipped: User did not opt-in or carrier missing.');
                 }
             }
         },
