@@ -115,21 +115,65 @@ Current date: March 17, 2026.`;
                             },
                         });
 
+                        // --- NEW: GENERATE CALENDAR INVITE (.ics) ---
+                        let attachments = [];
+                        try {
+                            const { createEvent } = require('ics');
+                            // Parse "March 24 @ 2:00 PM" -> [2026, 3, 24, 14, 0]
+                            const months: Record<string, number> = { 
+                                january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+                                july: 7, august: 8, september: 9, october: 10, november: 11, december: 12 
+                            };
+                            
+                            const parts = time.toLowerCase().match(/(\w+)\s*(\d+)\s*@\s*(\d+):(\d+)\s*(am|pm)/);
+                            if (parts) {
+                                const [_, monthStr, day, hour, min, ampm] = parts;
+                                let h = parseInt(hour);
+                                if (ampm === 'pm' && h < 12) h += 12;
+                                if (ampm === 'am' && h === 12) h = 0;
+                                
+                                const event: any = {
+                                    start: [2026, months[monthStr], parseInt(day), h, parseInt(min)],
+                                    duration: { hours: 1 },
+                                    title: `Appointment with ${doctor}`,
+                                    description: `Confirmed appointment with ${doctor} at Kyron Medical.`,
+                                    location: 'Kyron Medical Center',
+                                    status: 'CONFIRMED',
+                                    busyStatus: 'BUSY',
+                                    organizer: { name: 'Kyron Medical', email: gmailUser }
+                                };
+
+                                const { error, value } = createEvent(event);
+                                if (!error) {
+                                    attachments.push({
+                                        filename: 'appointment.ics',
+                                        content: value,
+                                        contentType: 'text/calendar'
+                                    });
+                                    console.log('[Calendar] .ics file generated successfully.');
+                                }
+                            }
+                        } catch (calErr) {
+                            console.error('[Calendar] Failed to generate .ics:', calErr);
+                        }
+
                         await transporter.sendMail({
                             from: `"Kyron Medical" <${gmailUser}>`,
                             to: email || '',
                             subject: 'Appointment Confirmed - Kyron Medical',
+                            attachments: attachments,
                             html: `
                                 <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
                                     <h2 style="color: #0070f3;">Appointment Confirmed!</h2>
                                     <p>Hello,</p>
                                     <p>Your appointment with <strong>${doctor}</strong> is confirmed for <strong>${time}</strong>.</p>
+                                    <p>We have attached a calendar invite to this email for your convenience.</p>
                                     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
                                     <p style="font-size: 12px; color: #888;">Kyron Medical - Your AI Healthcare Partner</p>
                                 </div>
                             `
                         });
-                        console.log('[Confirmation] Email sent via Gmail/Nodemailer.');
+                        console.log('[Confirmation] Email sent via Gmail/Nodemailer' + (attachments.length > 0 ? ' with Calendar invite.' : '.'));
                     } catch (err) {
                         console.error('[Confirmation] Nodemailer error:', err);
                     }
