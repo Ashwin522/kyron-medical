@@ -24,6 +24,24 @@ const bookedAppointments: any[] = [];
 
 export async function POST(req: Request) {
     const { messages, patientData } = await req.json();
+    const { firstName, lastName, reason, phone } = patientData || {};
+
+    // --- PIONEER FEATURE: AI CONTINUITY (MEMORY) ---
+    // Look up existing patient history for context
+    let historyContext = "";
+    try {
+        const { getPatientByPhone } = require('@/lib/db');
+        const existingPatient = phone ? await getPatientByPhone(phone) : null;
+
+        if (existingPatient) {
+            historyContext = `\n\n[RECOGNIZED PATIENT]: This user has visited before.
+            Name: ${existingPatient.first_name} ${existingPatient.last_name}
+            Previous History/Booking: ${existingPatient.last_conversation || 'None'}
+            INSTRUCTION: Greet them by name ("Welcome back, ${existingPatient.first_name}!") and acknowledge their history.`;
+        }
+    } catch (dbErr) {
+        console.warn('[Memory] Could not fetch patient history:', dbErr.message);
+    }
 
     const systemPrompt = `You are a medical scheduling assistant at Kyron Medical.
 Help the patient schedule an appointment.
@@ -45,6 +63,7 @@ INSTRUCTIONS:
 2. Tell them which doctor they should see.
 3. Offer them the available time slots for that doctor.
 4. If they pick a slot, confirm the booking by calling the send_confirmation tool.
+${historyContext}
 5. Once the tool returns success, tell the patient that their confirmation has been sent.
 - Email is always sent.
 - SMS is only sent if they opted in during intake (this is handled automatically by the tool).
