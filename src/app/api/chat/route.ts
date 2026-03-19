@@ -112,11 +112,7 @@ Current date: March 17, 2026.`;
                         console.error('[Confirmation] Nodemailer error:', err);
                     }
                 } else {
-                    console.error('[Confirmation] Email skipped Debug Info:', {
-                        hasUser: !!gmailUser,
-                        hasPass: !!gmailPass,
-                        isPlaceholder: gmailUser === 'your-email@gmail.com'
-                    });
+                    console.log('[Confirmation] Email skipped: Gmail credentials not configured or using placeholders.');
                 }
 
                 // --- 2. LIVE SMS (Twilio) ---
