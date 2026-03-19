@@ -83,36 +83,13 @@ Current date: March 17, 2026.`;
                 const gmailPass = process.env.GMAIL_APP_PASSWORD;
 
                 if (gmailUser && gmailPass && gmailUser !== 'your-email@gmail.com') {
-                    try {
-                        const nodemailer = require('nodemailer');
-                        const transporter = nodemailer.createTransport({
-                            service: 'gmail',
-                            auth: {
-                                user: gmailUser,
-                                pass: gmailPass,
-                            },
-                        });
-
-                        await transporter.sendMail({
-                            from: `"Kyron Medical" <${gmailUser}>`,
-                            to: email || '',
-                            subject: 'Appointment Confirmed - Kyron Medical',
-                            html: `
-                                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                                    <h2 style="color: #0070f3;">Appointment Confirmed!</h2>
-                                    <p>Hello,</p>
-                                    <p>Your appointment with <strong>${doctor}</strong> is confirmed for <strong>${time}</strong>.</p>
-                                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                                    <p style="font-size: 12px; color: #888;">Kyron Medical - Your AI Healthcare Partner</p>
-                                </div>
-                            `
-                        });
-                        console.log('[Confirmation] Email sent via Gmail/Nodemailer.');
-                    } catch (err) {
-                        console.error('[Confirmation] Nodemailer error:', err);
-                    }
+                    // ... existing logic ...
                 } else {
-                    console.log('[Confirmation] Email skipped: Gmail credentials not configured or using placeholders.');
+                    console.error('[Confirmation] Email skipped Debug Info:', {
+                        hasUser: !!gmailUser,
+                        hasPass: !!gmailPass,
+                        isPlaceholder: gmailUser === 'your-email@gmail.com'
+                    });
                 }
 
                 // --- 2. LIVE SMS (Twilio) ---
