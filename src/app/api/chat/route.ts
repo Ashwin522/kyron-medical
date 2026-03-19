@@ -40,7 +40,7 @@ export async function POST(req: Request) {
             INSTRUCTION: Greet them by name ("Welcome back, ${existingPatient.first_name}!") and acknowledge their history.`;
         }
     } catch (dbErr) {
-        console.warn('[Memory] Could not fetch patient history:', dbErr.message);
+        console.warn('[Memory] Could not fetch patient history:', (dbErr as any).message);
     }
 
     const systemPrompt = `You are a medical scheduling assistant at Kyron Medical.
