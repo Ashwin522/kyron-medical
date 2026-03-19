@@ -117,6 +117,7 @@ Current date: March 17, 2026.`;
 
                         // --- NEW: GENERATE CALENDAR INVITE (.ics) ---
                         let attachments = [];
+                        let googleUrl = "";
                         try {
                             const { createEvent } = require('ics');
                             // Parse "March 24 @ 2:00 PM" -> [2026, 3, 24, 14, 0]
@@ -132,6 +133,17 @@ Current date: March 17, 2026.`;
                                 if (ampm === 'pm' && h < 12) h += 12;
                                 if (ampm === 'am' && h === 12) h = 0;
                                 
+                                // Format for Google Calendar (YYYYMMDDTHHMMSSZ)
+                                const year = 2026;
+                                const m = months[monthStr].toString().padStart(2, '0');
+                                const d = day.padStart(2, '0');
+                                const hs = h.toString().padStart(2, '0');
+                                const ms = min.padStart(2, '0');
+                                const startStr = `${year}${m}${d}T${hs}${ms}00`;
+                                const endStr = `${year}${m}${d}T${(h+1).toString().padStart(2, '0')}${ms}00`;
+                                
+                                googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Appointment with ${doctor}`)}&dates=${startStr}/${endStr}&details=${encodeURIComponent(`Confirmed appointment with ${doctor} at Kyron Medical.`)}&location=${encodeURIComponent('Kyron Medical Center')}`;
+
                                 const event: any = {
                                     start: [2026, months[monthStr], parseInt(day), h, parseInt(min)],
                                     duration: { hours: 1 },
@@ -150,7 +162,6 @@ Current date: March 17, 2026.`;
                                         content: value,
                                         contentType: 'text/calendar'
                                     });
-                                    console.log('[Calendar] .ics file generated successfully.');
                                 }
                             }
                         } catch (calErr) {
@@ -163,17 +174,28 @@ Current date: March 17, 2026.`;
                             subject: 'Appointment Confirmed - Kyron Medical',
                             attachments: attachments,
                             html: `
-                                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px; margin: auto;">
                                     <h2 style="color: #0070f3;">Appointment Confirmed!</h2>
                                     <p>Hello,</p>
                                     <p>Your appointment with <strong>${doctor}</strong> is confirmed for <strong>${time}</strong>.</p>
-                                    <p>We have attached a calendar invite to this email for your convenience.</p>
+                                    
+                                    <div style="margin: 30px 0;">
+                                        <a href="${googleUrl}" target="_blank" style="background-color: #0070f3; color: white; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
+                                            Add to Google Calendar
+                                        </a>
+                                    </div>
+
+                                    <p style="font-size: 14px; color: #666;">
+                                        <em>Other calendars: We have also attached an <strong>appointment.ics</strong> file for Outlook and Apple Calendar users.</em>
+                                    </p>
+
                                     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                                    <p style="font-size: 12px; color: #888;">Kyron Medical Center | 123 Healthcare Way | Syracuse, NY</p>
                                     <p style="font-size: 12px; color: #888;">Kyron Medical - Your AI Healthcare Partner</p>
                                 </div>
                             `
                         });
-                        console.log('[Confirmation] Email sent via Gmail/Nodemailer' + (attachments.length > 0 ? ' with Calendar invite.' : '.'));
+                        console.log('[Confirmation] Email sent with Google Link & .ics Attachment.');
                     } catch (err) {
                         console.error('[Confirmation] Nodemailer error:', err);
                     }
