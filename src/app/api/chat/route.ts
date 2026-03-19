@@ -82,9 +82,12 @@ Current date: March 17, 2026.`;
                 const gmailUser = process.env.GMAIL_USER;
                 const gmailPass = process.env.GMAIL_APP_PASSWORD;
 
+                console.log(`[Debug] Attempting email. Recipient: ${email}, Agent: ${gmailUser ? 'Present' : 'MISSING'}, Pass: ${gmailPass ? 'Present' : 'MISSING'}`);
+
                 if (gmailUser && gmailPass && gmailUser !== 'your-email@gmail.com') {
                     try {
                         const nodemailer = require('nodemailer');
+                        // ... existing transporter setup ...
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
@@ -112,7 +115,12 @@ Current date: March 17, 2026.`;
                         console.error('[Confirmation] Nodemailer error:', err);
                     }
                 } else {
-                    console.log('[Confirmation] Email skipped: Gmail credentials not configured or using placeholders.');
+                    console.error('[Confirmation] Email SKIPPED. Logic check:', {
+                        userSet: !!gmailUser,
+                        passSet: !!gmailPass,
+                        isPlaceholder: gmailUser === 'your-email@gmail.com',
+                        recipientSet: !!email
+                    });
                 }
 
                 // --- 2. LIVE SMS (Twilio) ---
