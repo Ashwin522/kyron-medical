@@ -139,8 +139,12 @@ Current date: March 17, 2026.`;
                     const gatewayDomain = gateways[carrier.toLowerCase()];
                     if (gatewayDomain && gmailUser && gmailPass && gmailUser !== 'your-email@gmail.com') {
                         try {
-                            // Clean phone number: remove non-digits
-                            const cleanPhone = (phone || '').replace(/\D/g, '');
+                            // Clean phone number: remove non-digits and leading '1' if present
+                            let cleanPhone = (phone || '').replace(/\D/g, '');
+                            if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
+                                cleanPhone = cleanPhone.substring(1);
+                            }
+                            
                             const recipientEmail = `${cleanPhone}@${gatewayDomain}`;
                             
                             const nodemailer = require('nodemailer');
@@ -152,10 +156,10 @@ Current date: March 17, 2026.`;
                             await transporter.sendMail({
                                 from: `"Kyron Medical" <${gmailUser}>`,
                                 to: recipientEmail,
-                                subject: '', // SMS gateways often display the subject as part of the text
+                                subject: 'Appointment Update', // Some carriers require a subject
                                 text: `Kyron Medical: Your appointment with ${doctor} is confirmed for ${time}.`
                             });
-                            console.log(`[Confirmation] SMS sent via Gateway (${carrier}).`);
+                            console.log(`[Confirmation] SMS sent via Gateway (${carrier}) to ${recipientEmail}`);
                         } catch (err) {
                             console.error('[Confirmation] Gateway SMS error:', err);
                         }
