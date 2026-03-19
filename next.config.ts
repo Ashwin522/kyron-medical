@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
     TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
     BLAND_API_KEY: process.env.BLAND_API_KEY,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GMAIL_USER: process.env.GMAIL_USER,
+    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD,
   },
 };
 
