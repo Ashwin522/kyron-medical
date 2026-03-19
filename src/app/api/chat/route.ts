@@ -1,7 +1,6 @@
 import { createGroq } from '@ai-sdk/groq';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
-import twilio from 'twilio';
 
 export const maxDuration = 30;
 
